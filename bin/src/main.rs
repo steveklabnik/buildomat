@@ -26,10 +26,11 @@ use rusty_ulid::Ulid;
 
 const WIDTH_ISODATE: usize = 20;
 
+mod cache;
 mod config;
 
 #[derive(Default)]
-struct Stuff {
+pub struct Stuff {
     client_user: Option<Client>,
     client_admin: Option<Client>,
     profile: Option<config::Profile>,
@@ -995,6 +996,21 @@ async fn do_job(mut l: Level<Stuff>) -> Result<()> {
     sel!(l).run().await
 }
 
+async fn do_cache(mut l: Level<Stuff>) -> Result<()> {
+    l.cmd("upload", "upload a cache", cmd!(do_cache_upload))?;
+    l.cmd("restore", "restore a cache", cmd!(do_cache_restore))?;
+
+    sel!(l).run().await
+}
+
+pub async fn do_cache_upload(l: Level<Stuff>) -> Result<()> {
+    cache::upload(l).await
+}
+
+pub async fn do_cache_restore(l: Level<Stuff>) -> Result<()> {
+    cache::restore(l).await
+}
+
 async fn do_user_create(mut l: Level<Stuff>) -> Result<()> {
     l.usage_args(Some("NAME"));
 
@@ -1737,6 +1753,7 @@ async fn do_admin(mut l: Level<Stuff>) -> Result<()> {
     l.cmd("control", "server control functions", cmd!(do_control))?;
     l.cmd("worker", "worker management", cmd!(do_worker))?;
     l.cmd("job", "job management", cmd!(do_admin_job))?;
+    l.hcmd("cache", "cache management", cmd!(do_cache))?;
 
     sel!(l).run().await
 }
